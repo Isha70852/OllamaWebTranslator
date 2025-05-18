@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ollama Translator</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="popup-header">
+      <h1>Ollama Translator</h1>
+    </div>
+    
+    <div class="popup-content">
+      <p class="info-text">Select text on any webpage and click the translate button to translate using your configured Ollama model.</p>
+      
+      <div class="status-container">
+        <div class="status-item">
+          <span class="status-label">Status:</span>
+          <span id="connection-status" class="status-value">Not configured</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Model:</span>
+          <span id="model-name" class="status-value">Not set</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Languages:</span>
+          <span id="language-pair" class="status-value">Not set</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="popup-footer">
+      <button id="settings-btn" class="settings-button">Open Settings</button>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

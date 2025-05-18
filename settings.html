@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ollama Translator Settings</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="settings-container">
+    <div class="settings-header">
+      <h1>Ollama Translator Settings</h1>
+      <p class="subtitle">Configure your translation options</p>
+    </div>
+    
+    <div class="settings-content">
+      <form id="settings-form">
+        <div class="form-section">
+          <h2>Ollama API Configuration</h2>
+          
+          <div class="form-group">
+            <label for="ollama-endpoint">API Endpoint</label>
+            <input 
+              type="url" 
+              id="ollama-endpoint" 
+              placeholder="http://localhost:11434/api" 
+              required
+            >
+            <p class="help-text">The URL of your Ollama API (e.g., http://localhost:11434/api)</p>
+          </div>
+          
+          <div class="form-group">
+            <label for="ollama-model">Model Name</label>
+            <input 
+              type="text" 
+              id="ollama-model" 
+              placeholder="llama2" 
+              required
+            >
+            <p class="help-text">Name of the Ollama model you want to use for translations</p>
+          </div>
+        </div>
+        
+        <div class="form-section">
+          <h2>Language Settings</h2>
+          
+          <div class="form-group">
+            <label for="source-language">Source Language</label>
+            <select id="source-language" required>
+              <option value="" disabled selected>Select source language</option>
+              <option value="English">English</option>
+              <option value="tranditional-Chinese">tranditional-Chinese</option>
+              <option value="simplified-Chinese">simplified-Chinese</option>
+              <option value="Spanish">Spanish</option>
+              <option value="German">German</option>
+              <option value="French">French</option>
+              <option value="Japanese">Japanese</option>
+              <option value="Korean">Korean</option>
+              <option value="Russian">Russian</option>
+              <option value="Portuguese">Portuguese</option>
+              <option value="Italian">Italian</option>
+              <option value="Arabic">Arabic</option>
+              <option value="Hindi">Hindi</option>
+              <option value="Dutch">Dutch</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="target-language">Target Language</label>
+            <select id="target-language" required>
+              <option value="" disabled selected>Select target language</option>
+              <option value="English">English</option>
+              <option value="tranditional-Chinese">tranditional-Chinese</option>
+              <option value="simplified-Chinese">simplified-Chinese</option>
+              <option value="Spanish">Spanish</option>
+              <option value="German">German</option>
+              <option value="French">French</option>
+              <option value="Japanese">Japanese</option>
+              <option value="Korean">Korean</option>
+              <option value="Russian">Russian</option>
+              <option value="Portuguese">Portuguese</option>
+              <option value="Italian">Italian</option>
+              <option value="Arabic">Arabic</option>
+              <option value="Hindi">Hindi</option>
+              <option value="Dutch">Dutch</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-section">
+          <h2>Advanced Settings</h2>
+          
+          <div class="form-group">
+            <label for="translation-prompt">Translation Prompt Template</label>
+            <textarea 
+              id="translation-prompt" 
+              rows="4" 
+              placeholder="Enter your custom translation prompt template..."
+              required
+            ></textarea>
+            <p class="help-text">Use {text} for the text to translate, {source} for source language, and {target} for target language</p>
+          </div>
+          
+          <div class="form-group switch-group">
+            <label for="auto-translate">
+              Auto-translate on selection
+              <input type="checkbox" id="auto-translate">
+              <span class="switch"></span>
+            </label>
+            <p class="help-text">Automatically translate text when selected without clicking the button</p>
+          </div>
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" id="save-btn" class="save-button">Save Settings</button>
+          <button type="button" id="test-connection-btn" class="test-button">Test Connection</button>
+        </div>
+      </form>
+    </div>
+    
+    <div id="status-message" class="status-message"></div>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html>
