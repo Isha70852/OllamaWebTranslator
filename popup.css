@@ -83,6 +83,35 @@ body {
   color: var(--text-light);
 }
 
+.translation-actions {
+  margin-bottom: 16px;
+}
+
+.action-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.action-button:hover {
+  background-color: var(--primary-dark);
+}
+
+.action-button svg {
+  width: 16px;
+  height: 16px;
+}
+
 .popup-footer {
   padding: 16px;
   display: flex;

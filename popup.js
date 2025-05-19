@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const connectionStatus = document.getElementById('connection-status');
   const modelName = document.getElementById('model-name');
   const languagePair = document.getElementById('language-pair');
+  const translatePageBtn = document.getElementById('translate-page-btn');
   const settingsBtn = document.getElementById('settings-btn');
 
   // Load and display saved settings
@@ -19,6 +20,14 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       connectionStatus.textContent = 'Not configured';
       connectionStatus.style.color = '#ef4444'; // Error red
+    }
+  });
+
+  // Handle full page translation
+  translatePageBtn.addEventListener('click', async function() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab.id) {
+      chrome.tabs.sendMessage(tab.id, { action: 'translateFullPage' });
     }
   });
 

@@ -12,6 +12,9 @@ let translateButton = null;
 let resultBox = null;
 let selectedText = '';
 let isTranslating = false;
+let isTranslatingPage = false;
+let isPaused = false;
+let translationController = null;
 
 // Settings
 let settings = {
@@ -247,6 +250,197 @@ function showError(message) {
     resultBox.classList.add('show');
   }, 10);
 }
+
+// Handle full page translation
+async function translateFullPage() {
+  if (isTranslatingPage) return;
+  
+  isTranslatingPage = true;
+  isPaused = false;
+  translationController = new AbortController();
+
+  // Create progress bar
+  const progressBar = document.createElement('div');
+  progressBar.className = 'ollama-translation-progress';
+  document.body.appendChild(progressBar);
+
+  // Create controls
+  const controls = document.createElement('div');
+  controls.className = 'ollama-translation-controls';
+  controls.innerHTML = `
+    <span class="status">Translating...</span>
+    <div class="control-buttons">
+    <button id="pauseTranslation">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+      Pause
+    </button>
+    <button id="stopTranslation" class="stop-button">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+      Stop
+    </button>
+    </div>
+  `;
+  document.body.appendChild(controls);
+
+  const pauseButton = document.getElementById('pauseTranslation');
+  const stopButton = document.getElementById('stopTranslation');
+  pauseButton.addEventListener('click', toggleTranslation);
+  stopButton.addEventListener('click', () => {
+    cleanupTranslation();
+    // Remove all translated text
+    document.querySelectorAll('.ollama-translated-text').forEach(el => el.remove());
+  });
+
+  try {
+    // Get all text nodes that are not in scripts, styles, or already translated
+    const textNodes = [];
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: function(node) {
+          // Skip if parent is script, style, or already translated
+          if (
+            node.parentElement?.tagName === 'SCRIPT' ||
+            node.parentElement?.tagName === 'STYLE' ||
+            node.parentElement?.classList.contains('ollama-translated-text')
+          ) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          // Accept if node has meaningful text
+          return node.textContent.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+        }
+      }
+    );
+
+    while (walker.nextNode()) {
+      textNodes.push(walker.currentNode);
+    }
+
+    // Process text nodes in chunks
+    const chunkSize = 5;
+    for (let i = 0; i < textNodes.length; i += chunkSize) {
+      // Check if translation was aborted
+      if (translationController.signal.aborted) {
+        break;
+      }
+
+      // Wait if paused
+      while (isPaused && !translationController.signal.aborted) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      const chunk = textNodes.slice(i, i + chunkSize);
+      const texts = chunk.map(node => node.textContent.trim());
+
+      // Update progress bar
+      progressBar.style.transform = `scaleX(${(i + 1) / textNodes.length})`;
+
+      // Translate chunk
+      const translations = await Promise.all(
+        texts.map(text =>
+          new Promise(resolve => {
+            chrome.runtime.sendMessage({
+              action: 'translate',
+              text: text,
+              source: settings.sourceLanguage,
+              target: settings.targetLanguage,
+              model: settings.ollamaModel,
+              endpoint: settings.ollamaEndpoint,
+              prompt: settings.translationPrompt
+            }, response => {
+              resolve(response.success ? response.translation : null);
+            });
+          })
+        )
+      );
+
+      // Insert translations
+      chunk.forEach((node, index) => {
+        if (translations[index]) {
+          const translationSpan = document.createElement('div');
+          translationSpan.className = 'ollama-translated-text';
+          translationSpan.textContent = translations[index];
+          node.parentNode.insertBefore(translationSpan, node.nextSibling);
+          
+          // Trigger animation
+          setTimeout(() => {
+            translationSpan.classList.add('show');
+          }, 10);
+        }
+      });
+
+      // Small delay between chunks to avoid overwhelming the API
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  } catch (error) {
+    console.error('Full page translation error:', error);
+  } finally {
+    cleanupTranslation();
+  }
+}
+
+// Toggle translation pause/resume
+function toggleTranslation() {
+  isPaused = !isPaused;
+  const pauseButton = document.getElementById('pauseTranslation');
+  const statusSpan = document.querySelector('.ollama-translation-controls .status');
+  
+  if (isPaused) {
+    pauseButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+      Resume
+    `;
+    statusSpan.textContent = 'Paused';
+  } else {
+    pauseButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+      Pause
+    `;
+    statusSpan.textContent = 'Translating...';
+  }
+}
+
+// Cleanup translation UI elements
+function cleanupTranslation() {
+  if (translationController) {
+    translationController.abort();
+    translationController = null;
+  }
+
+  const progressBar = document.querySelector('.ollama-translation-progress');
+  if (progressBar) {
+    progressBar.remove();
+  }
+
+  const controls = document.querySelector('.ollama-translation-controls');
+  if (controls) {
+    controls.remove();
+  }
+
+  if (isTranslatingPage) {
+    isTranslatingPage = false;
+    isPaused = false;
+  }
+}
+
+// Listen for messages from popup
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'translateFullPage') {
+    if (isTranslatingPage) {
+      cleanupTranslation();
+    } else {
+      translateFullPage();
+    }
+  }
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  if (isTranslatingPage) {
+    cleanupTranslation();
+  }
+});
 
 // Initialize when the DOM is fully loaded
 if (document.readyState === 'loading') {
